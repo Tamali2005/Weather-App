@@ -21,12 +21,12 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Outfit',sans-serif;background:var(--bg-deep);color:var(--text-primary);min-height:100vh;display:flex;flex-direction:column;transition:background 0.3s,color 0.3s;}
 
-.topnav{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-panel);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;position:sticky;top:0;z-index:100;}
-.search-wrap{position:relative;flex-shrink:0;}
+.topnav{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-panel);border-bottom:1px solid var(--border);overflow-x:visible;flex-shrink:0;position:sticky;top:0;z-index:500;}
+.search-wrap{position:relative;flex-shrink:0;overflow:visible;}
 .search-box{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:7px 14px;min-width:200px;}
 .search-box input{background:none;border:none;outline:none;color:var(--text-primary);font-family:'Outfit',sans-serif;font-size:14px;width:150px;}
 .search-box input::placeholder{color:var(--text-muted);}
-.autocomplete{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;z-index:200;overflow:hidden;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+.autocomplete{position:fixed;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;z-index:9999;overflow:hidden;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:240px;}
 .autocomplete-item{padding:10px 14px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:background 0.15s;}
 .autocomplete-item:hover{background:var(--bg-card);color:var(--text-primary);}
 .quick-city{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:13px;color:var(--text-secondary);flex-shrink:0;transition:all 0.2s;}
@@ -500,11 +500,12 @@ async function fetchAll(){
 async function goCity(name){
   loading(true,`Finding ${name}…`);
   try{
+    // name may include country code like "Washington,US" from autocomplete
     const r=await fetch(`${GEO}/direct?q=${encodeURIComponent(name)}&limit=5&appid=${API_KEY}`).then(r=>r.json());
     if(!r.length){toast('City not found',true);return;}
     const {lat,lon,name:cn,state:st,country}=r[0];
     S.lat=lat;S.lon=lon;S.city=cn;S.stateName=st||country;
-    const locStr=cn+(st?`, ${st}`:'');
+    const locStr=cn+(st?`, ${st}`:'')+` (${country})`;
     ['locName','hLocName'].forEach(id=>{const el=$(id);if(el)el.textContent=id==='locName'?locStr:cn;});
     const rc=$('radarCity');if(rc)rc.textContent=cn;
     await fetchAll();
@@ -576,8 +577,9 @@ function renderCurrent(){
   }else ra.style.display='none';
   // Store city name for the clock label when updateSky is called
   window._skyCity = S.city;
-  // Update sky animation — pass city timezone offset from forecast data
-  const tzOff = S.forecast?.city?.timezone ?? null;
+  // Use city timezone: current weather has c.timezone (seconds east of UTC), forecast has city.timezone
+  // c.timezone is most reliable — always present in /weather response
+  const tzOff = (typeof c.timezone === 'number') ? c.timezone : (S.forecast?.city?.timezone ?? null);
   if(window.updateSky) window.updateSky(w.id, c.sys?.sunrise, c.sys?.sunset, tzOff);
   // radar footer
   const fc2=S.forecast?.list;
@@ -1211,7 +1213,16 @@ si.addEventListener('input',e=>{
       const r=await fetch(`${GEO}/direct?q=${encodeURIComponent(v)}&limit=5&appid=${API_KEY}`).then(r=>r.json());
       const ac=$('autocomplete');
       if(!r.length){ac.style.display='none';return;}
-      ac.innerHTML=r.map(c=>`<div class="autocomplete-item" data-n="${c.name},${c.country}">${c.name}${c.state?', '+c.state:''}, ${c.country}</div>`).join('');
+      ac.innerHTML=r.map(c=>{
+        const label=`${c.name}${c.state?', '+c.state:''}, ${c.country}`;
+        const key=c.state?`${c.name},${c.state},${c.country}`:`${c.name},${c.country}`;
+        return `<div class="autocomplete-item" data-n="${key}">${label}</div>`;
+      }).join('');
+      // Position fixed dropdown below the search box
+      const box=$('searchInput').getBoundingClientRect();
+      ac.style.top=(box.bottom+4)+'px';
+      ac.style.left=box.left+'px';
+      ac.style.width=Math.max(box.width,260)+'px';
       ac.style.display='block';
       ac.querySelectorAll('.autocomplete-item').forEach(it=>{
         it.onclick=()=>{goCity(it.dataset.n);ac.style.display='none';si.value='';};
@@ -1546,14 +1557,13 @@ $('btnList').addEventListener('click',()=>{
     if(typeof tzOffset==='number') skyState.tzOffset=tzOffset;
     // Compute sunrise/sunset as seconds-of-day in the CITY'S local time
     if(sunriseTs){
-      const cityMs=sunriseTs*1000+(skyState.tzOffset||0)*1000;
-      const d=new Date(cityMs);
-      skyState.sunrise=d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds();
+      // sunriseTs is UTC unix seconds. Add tzOffset to get city local time.
+      const localSec = sunriseTs + (skyState.tzOffset||0);
+      skyState.sunrise = ((localSec % 86400) + 86400) % 86400;
     }
     if(sunsetTs){
-      const cityMs=sunsetTs*1000+(skyState.tzOffset||0)*1000;
-      const d=new Date(cityMs);
-      skyState.sunset=d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds();
+      const localSec = sunsetTs + (skyState.tzOffset||0);
+      skyState.sunset = ((localSec % 86400) + 86400) % 86400;
     }
     const footer=$('radarFooter');if(!footer)return;
     const id=curWid;
