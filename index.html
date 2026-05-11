@@ -19,7 +19,7 @@
   --border:rgba(0,0,0,0.08);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Outfit',sans-serif;background:var(--bg-deep);color:var(--text-primary);min-height:100vh;display:flex;flex-direction:column;transition:background 0.3s,color 0.3s;}
+html{height:100%;overflow:hidden;}body{font-family:'Outfit',sans-serif;background:var(--bg-deep);color:var(--text-primary);height:100vh;overflow:hidden;display:flex;flex-direction:column;transition:background 0.3s,color 0.3s;overflow-x:hidden;max-width:100vw;box-sizing:border-box;}
 
 .topnav{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-panel);border-bottom:1px solid var(--border);overflow-x:visible;flex-shrink:0;position:sticky;top:0;z-index:500;}
 .search-wrap{position:relative;flex-shrink:0;overflow:visible;}
@@ -37,7 +37,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg-deep);color:var(--text-
 .gps-btn{background:var(--bg-card);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all 0.2s;font-size:14px;}
 .gps-btn:hover{color:var(--accent-cyan);border-color:var(--accent-cyan);}
 
-.main-layout{display:flex;flex:1;overflow:hidden;}
+.main-layout{display:flex;flex:1;overflow:hidden;min-height:0;}
 
 .sidebar{width:var(--sidebar-w);background:var(--bg-panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px 0;flex-shrink:0;}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;font-size:14px;color:var(--text-secondary);transition:all 0.2s;border-left:3px solid transparent;}
@@ -93,9 +93,13 @@ body{font-family:'Outfit',sans-serif;background:var(--bg-deep);color:var(--text-
 .hourly-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
 
 /* Tab row */
-.tab-row{display:flex;align-items:center;gap:4px;padding:12px 16px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;}
+.tab-row{display:flex;align-items:center;gap:4px;padding:10px 12px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;}
 .tab-row::-webkit-scrollbar{display:none;}
 .tab-row-title{font-size:15px;font-weight:700;margin-right:10px;flex-shrink:0;color:var(--text-primary);}
+.tab-scroll-wrap{position:relative;overflow:hidden;}
+.tab-scroll-wrap::after{content:'';position:absolute;right:0;top:0;bottom:1px;width:40px;background:linear-gradient(to right,transparent,var(--bg-panel));pointer-events:none;z-index:2;}
+.tab-scroll-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);z-index:3;background:var(--bg-card);border:1px solid var(--border);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--text-secondary);flex-shrink:0;transition:background 0.15s;}
+.tab-scroll-btn:hover{background:var(--accent-blue);color:#fff;}
 .tab{padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;color:var(--text-secondary);white-space:nowrap;transition:all 0.2s;border:1px solid transparent;}
 .tab:hover{color:var(--text-primary);border-color:var(--border);}
 .tab.active{background:var(--accent-yellow);color:#1a1200;font-weight:600;border-color:transparent;}
@@ -207,12 +211,127 @@ canvas{width:100%!important;height:100%!important;}
 .toast.err{border-color:var(--accent-red);color:var(--accent-red);}
 
 @media(max-width:768px){
-  :root{--sidebar-w:50px;}
-  .sidebar-item span:not(.si-icon){display:none;}
-  .sidebar-item{justify-content:center;padding:12px;}
-  .top-row{grid-template-columns:1fr;}
-  .details-grid{grid-template-columns:1fr;}
+  :root{--sidebar-w:0px;}
+
+  html,body{
+    width:100%;
+    max-width:100vw;
+    overflow-x:hidden;
+    height:100%;
+  }
+
+  /* Sidebar completely hidden on mobile */
+  .sidebar{
+    display:none !important;
+  }
+
+  /* Main layout: full width column */
+  .main-layout{
+    flex-direction:column;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+  }
+
+  /* Content: full width, scrollable */
+  .content{
+    flex:1;
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+    padding:10px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Topnav: compact, no overflow */
+  .topnav{
+    flex-wrap:nowrap;
+    padding:6px 10px;
+    gap:6px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .topnav::-webkit-scrollbar{display:none;}
+  .search-wrap{flex:0 0 140px;}
+  .search-box{width:100%;font-size:12px;}
+
+  /* Cards full width */
+  .card,.hourly-card,.radar-card,.curr-card{
+    width:100%;
+    box-sizing:border-box;
+    border-radius:12px;
+  }
+
+  /* Top row: single column */
+  .top-row{
+    grid-template-columns:1fr;
+    gap:10px;
+    width:100%;
+  }
+
+  /* Current weather */
+  .curr-temp{font-size:48px !important;}
+  .curr-stats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .stat-item{flex:1 1 calc(33% - 8px);min-width:80px;}
+
+  /* Sky canvas */
+  .radar-card{min-height:180px;}
+  #skyCanvas{min-height:180px !important;}
+
+  /* Loc header */
+  .loc-header{flex-wrap:wrap;gap:4px;}
+  .loc-title{font-size:16px;}
+
+  /* Tab row */
+  .tab-row{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scroll-behavior:smooth;
+    padding:8px 10px;
+    gap:4px;
+  }
+  .tab{font-size:11px;padding:4px 10px;white-space:nowrap;}
+
+  /* Forecast scroll */
+  .forecast-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .day-col{min-width:60px;}
+
+  /* Details grid: 2 col */
+  .details-grid{grid-template-columns:1fr 1fr !important;}
+
+  /* Hourly strip */
+  .hourly-strip{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .hour-col{min-width:60px;}
+
+  /* Chart */
+  .chart-wrap{overflow-x:auto;}
+
+  /* Autocomplete */
+  #autocomplete{
+    left:10px !important;
+    right:10px !important;
+    width:auto !important;
+  }
 }
+
+@media(max-width:400px){
+  .details-grid{grid-template-columns:1fr !important;}
+  .curr-temp{font-size:40px !important;}
+  .stat-item{flex:1 1 calc(50% - 8px);}
+}
+  .details-grid{grid-template-columns:1fr !important;}
+  .curr-temp{font-size:44px !important;}
+
 </style>
 </head>
 <body>
@@ -310,22 +429,25 @@ canvas{width:100%!important;height:100%!important;}
 
       <div class="hourly-card">
         <!-- Tab row -->
-        <div class="tab-row">
-          <span class="tab-row-title">Hourly</span>
-          <div class="tab active" data-metric="temp">Overview</div>
-          <div class="tab" data-metric="precip">Precipitation</div>
-          <div class="tab" data-metric="wind">Wind</div>
-          <div class="tab" data-metric="air">Air Quality</div>
-          <div class="tab" data-metric="humidity">Humidity</div>
-          <div class="tab" data-metric="cloud">Cloud cover</div>
-          <div class="tab" data-metric="pressure">Pressure</div>
-          <div class="tab" data-metric="uv">UV</div>
-          <div class="tab" data-metric="vis">Visibility</div>
-          <div class="tab" data-metric="feels">Feels like</div>
-          <div class="tab-actions">
-            <button class="tbtn active" id="btnChart">📊 Chart</button>
-            <button class="tbtn" id="btnList">☰ List</button>
+        <div class="tab-scroll-wrap" id="hourlyTabWrap">
+          <div class="tab-row" id="hourlyTabRow">
+            <span class="tab-row-title">Hourly</span>
+            <div class="tab active" data-metric="temp">Overview</div>
+            <div class="tab" data-metric="precip">Precipitation</div>
+            <div class="tab" data-metric="wind">Wind</div>
+            <div class="tab" data-metric="air">Air Quality</div>
+            <div class="tab" data-metric="humidity">Humidity</div>
+            <div class="tab" data-metric="cloud">Cloud cover</div>
+            <div class="tab" data-metric="pressure">Pressure</div>
+            <div class="tab" data-metric="uv">UV</div>
+            <div class="tab" data-metric="vis">Visibility</div>
+            <div class="tab" data-metric="feels">Feels like</div>
+            <div class="tab-actions">
+              <button class="tbtn active" id="btnChart">📊 Chart</button>
+              <button class="tbtn" id="btnList">☰ List</button>
+            </div>
           </div>
+          <button class="tab-scroll-btn" id="hourlyTabScrollBtn" onclick="scrollHourlyTabs(1)">›</button>
         </div>
         <!-- Day cards -->
         <div class="forecast-scroll" id="forecastRow"></div>
@@ -1662,6 +1784,31 @@ window.addEventListener('resize',()=>{if(S.forecast)setTimeout(()=>drawChart(fee
   catch(e){toast('Failed to load: '+e.message,true);}
   finally{loading(false);}
 })();
+
+// Tab row scroll helper
+function scrollHourlyTabs(dir){
+  const row = document.getElementById('hourlyTabRow');
+  if(!row) return;
+  row.scrollBy({left: dir * 160, behavior:'smooth'});
+  // Flip button direction after scroll
+  const btn = document.getElementById('hourlyTabScrollBtn');
+  if(!btn) return;
+  const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 10;
+  btn.textContent = atEnd ? '‹' : '›';
+  btn.onclick = () => scrollHourlyTabs(atEnd ? -1 : 1);
+}
+// Hide scroll button if tab row fits
+window.addEventListener('load', () => {
+  const row = document.getElementById('hourlyTabRow');
+  const btn = document.getElementById('hourlyTabScrollBtn');
+  if(row && btn){
+    const check = () => {
+      btn.style.display = row.scrollWidth > row.clientWidth ? 'flex' : 'none';
+    };
+    check();
+    window.addEventListener('resize', check);
+  }
+});
 </script>
 </body>
 </html>
