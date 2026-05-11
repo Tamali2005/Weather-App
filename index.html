@@ -332,6 +332,44 @@ canvas{width:100%!important;height:100%!important;}
   .details-grid{grid-template-columns:1fr !important;}
   .curr-temp{font-size:44px !important;}
 
+
+/* ── Mobile Bottom Nav ── */
+#mobileBottomNav{display:none;}
+@media(max-width:768px){
+  #mobileBottomNav{
+    display:flex;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    z-index:1000;
+    background:var(--bg-panel);
+    border-top:1px solid var(--border);
+    overflow-x:auto;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #mobileBottomNav::-webkit-scrollbar{display:none;}
+  .mbn-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    padding:6px 12px 8px;
+    cursor:pointer;
+    flex:0 0 auto;
+    min-width:56px;
+    transition:all 0.2s;
+    color:var(--text-muted);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mbn-item.active{color:var(--accent-cyan);}
+  .mbn-item:active{background:rgba(255,255,255,0.05);}
+  .mbn-icon{font-size:18px;line-height:1;}
+  .mbn-label{font-size:9px;font-weight:500;white-space:nowrap;letter-spacing:0.2px;}
+  /* Push content up so bottom nav doesn't cover it */
+  .content{padding-bottom:calc(64px + env(safe-area-inset-bottom)) !important;}
+}
 </style>
 </head>
 <body>
