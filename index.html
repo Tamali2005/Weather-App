@@ -328,10 +328,10 @@ canvas{width:100%!important;height:100%!important;}
   .details-grid{grid-template-columns:1fr !important;}
   .curr-temp{font-size:40px !important;}
   .stat-item{flex:1 1 calc(50% - 8px);}
-}
+
   .details-grid{grid-template-columns:1fr !important;}
   .curr-temp{font-size:44px !important;}
-
+}
 
 /* ── Mobile Bottom Nav ── */
 #mobileBottomNav{display:none;}
@@ -1847,6 +1847,54 @@ window.addEventListener('load', () => {
     window.addEventListener('resize', check);
   }
 });
+</script>
+
+  <!-- ── Mobile Bottom Nav ── -->
+  <nav id="mobileBottomNav">
+    <div class="mbn-item active" data-view="current"><span class="mbn-icon">⭐</span><span class="mbn-label">Current</span></div>
+    <div class="mbn-item" data-view="hourly"><span class="mbn-icon">🕐</span><span class="mbn-label">Hourly</span></div>
+    <div class="mbn-item" data-view="details"><span class="mbn-icon">📋</span><span class="mbn-label">Details</span></div>
+    <div class="mbn-item" data-view="maps"><span class="mbn-icon">🗺</span><span class="mbn-label">Maps</span></div>
+    <div class="mbn-item" data-view="monthly"><span class="mbn-icon">📅</span><span class="mbn-label">Monthly</span></div>
+    <div class="mbn-item" data-view="trends"><span class="mbn-icon">📈</span><span class="mbn-label">Trends</span></div>
+    <div class="mbn-item" data-view="news"><span class="mbn-icon">📰</span><span class="mbn-label">News</span></div>
+    <div class="mbn-item" id="mbnRefresh"><span class="mbn-icon">🔄</span><span class="mbn-label">Refresh</span></div>
+  </nav>
+
+<script>
+// ── Mobile Bottom Nav wiring ──
+(function(){
+  const nav = document.getElementById('mobileBottomNav');
+  if(!nav) return;
+
+  function switchView(v){
+    S.activeView = v;
+    document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-item[data-view="'+v+'"]').forEach(s=>s.classList.add('active'));
+    document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));
+    const panel = document.getElementById('view-'+v);
+    if(panel) panel.classList.add('active');
+    if(v==='maps' && typeof renderMapsView==='function') renderMapsView();
+    nav.querySelectorAll('.mbn-item').forEach(b=>
+      b.classList.toggle('active', b.dataset.view===v));
+    const content = document.querySelector('.content');
+    if(content) content.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  nav.querySelectorAll('.mbn-item[data-view]').forEach(item=>{
+    item.addEventListener('click',()=> switchView(item.dataset.view));
+  });
+
+  const mbnRefresh = document.getElementById('mbnRefresh');
+  if(mbnRefresh) mbnRefresh.addEventListener('click',()=>{ if(typeof fetchAll==='function') fetchAll(); });
+
+  document.querySelectorAll('.sidebar-item[data-view]').forEach(s=>{
+    s.addEventListener('click',()=>{
+      nav.querySelectorAll('.mbn-item').forEach(b=>
+        b.classList.toggle('active', b.dataset.view===s.dataset.view));
+    });
+  });
+})();
 </script>
 </body>
 </html>
